@@ -13,11 +13,11 @@ pub fn init_pool(db_url:String)->Pool{
     let manager = ConnectionManager::<SqliteConnection>::new(db_url);
     r2d2::Pool::new(manager).expect("db pool failure")
 }
-pub struct Conn<'r> (pub &'r  r2d2::PooledConnection<ConnectionManager<SqliteConnection>>);
+pub struct Conn (pub r2d2::PooledConnection<ConnectionManager<SqliteConnection>>);
 #[rocket::async_trait]
-impl<'r> FromRequest<'r> for Conn<'r>{
+impl<'r> FromRequest<'r> for Conn{
     type Error= ();
-    async fn from_request(request: &'r Request<'_>)-> request::Outcome<Conn<'r>,()>{
+    async fn from_request(request: &'r Request<'_>)-> request::Outcome<Conn,()>{
         let pool =request.guard::<&State<Pool>>().await;
        let pool= Success(Conn(conn));
        let pool= Failure((Status::ServiceUnavailable, ()));
@@ -25,7 +25,7 @@ impl<'r> FromRequest<'r> for Conn<'r>{
     }
 }
 
-impl<'r> Deref for  Conn<'r> {
+impl Deref for  Conn {
     type Target =SqliteConnection;
     #[inline(always)]
     fn deref(&self)-> &Self::Target{
